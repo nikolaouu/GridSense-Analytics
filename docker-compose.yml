@@ -2,7 +2,25 @@ version: '3.8'
 
 services:
 
-  # 1. PostgreSQL 15
+  # --- API SERVICE ---
+  api:
+    build: .
+    container_name: gridsense_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/code/app
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - mongodb
+      - neo4j
+      - redis
+      - cassandra
+    mem_limit: 512m
+
+  # PostgreSQL 15
   postgres:
     image: postgres:15-alpine
     container_name: gridsense_postgres
@@ -16,7 +34,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     mem_limit: 512m
 
-  # 2. MongoDB 7
+  # MongoDB 7
   mongodb:
     image: mongo:7
     container_name: gridsense_mongodb
@@ -29,7 +47,7 @@ services:
       - mongo_data:/data/db
     mem_limit: 512m
 
-  # 3. Neo4j 5 (Community)
+  # Neo4j 5 (Community)
   neo4j:
     image: neo4j:5-community
     container_name: gridsense_neo4j
@@ -42,7 +60,7 @@ services:
       - neo4j_data:/data
     mem_limit: 1g
 
-  # 4. Redis 7
+  # Redis 7
   redis:
     image: redis:7-alpine
     container_name: gridsense_redis
@@ -53,7 +71,7 @@ services:
       - redis_data:/data
     mem_limit: 256m
 
-  # 5. Apache Cassandra 4.1
+  # Apache Cassandra 4.1
   cassandra:
     image: cassandra:4.1
     container_name: gridsense_cassandra
