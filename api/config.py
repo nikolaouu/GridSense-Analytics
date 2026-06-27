@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     NEO4J_HOST: str = "neo4j"
     NEO4J_PORT: int = 7687
 
+    CASSANDRA_HOST: str = "cassandra"
+    CASSANDRA_PORT: int = 9042
+    CASSANDRA_KEYSPACE: str = "gridsense_telemetry"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()
