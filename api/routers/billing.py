@@ -1,4 +1,3 @@
-# api/routers/billing.py
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, Any
@@ -18,11 +17,11 @@ class ConsumerCreate(BaseModel):
 
 @router.post("/consumers")
 async def create_consumer(consumer: ConsumerCreate):
-    pool = get_pg_pool() # Κλήση χωρίς await πλέον
+    pool = get_pg_pool()
 
     async with pool.acquire() as conn:
         try:
-            # Περνάμε το consumer.meta_data απευθείας ως dict (το asyncpg ξέρει τι να κάνει)
+
             account_id = await conn.fetchval(
                 """
                 INSERT INTO consumer_billing (consumer_name, email, billing_address, tariff_plan, meta_data)
@@ -46,5 +45,4 @@ async def get_consumer(account_id: int):
             raise HTTPException(status_code=404, detail="Consumer not found")
         
         res = dict(row)
-        # Το res["meta_data"] έρχεται αυτόματα ως Python dict, δεν χρειάζεται json.loads()
         return res

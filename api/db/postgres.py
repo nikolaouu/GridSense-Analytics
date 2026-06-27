@@ -1,9 +1,17 @@
-# api/db/postgres.py
 import asyncpg
 import asyncio
+import json
 from api.config import settings
 
 _pool = None
+
+async def register_jsonb_codec(conn):
+    await conn.set_type_codec(
+        'jsonb',
+        encoder=json.dumps,
+        decoder=json.loads,
+        schema='pg_catalog'
+    )
 
 async def init_postgres_db():
     global _pool
@@ -17,7 +25,8 @@ async def init_postgres_db():
                 host=settings.POSTGRES_HOST,
                 port=settings.POSTGRES_PORT,
                 min_size=2,
-                max_size=10
+                max_size=10,
+                init=register_jsonb_codec
             )
             
             async with _pool.acquire() as connection:
@@ -32,7 +41,7 @@ async def init_postgres_db():
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
-            print("PostgreSQL Database initialized with asyncpg pool.")
+            print("PostgreSQL Database initialized with asyncpg pool and JSONB codec.")
             return
         except Exception as e:
             print(f"PostgreSQL not ready, retrying... ({retries} left). Error: {e}")
