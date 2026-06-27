@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
 
+    NEO4J_AUTH: str = "neo4j/password"
+    NEO4J_HOST: str = "neo4j"
+    NEO4J_PORT: int = 7687
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()
