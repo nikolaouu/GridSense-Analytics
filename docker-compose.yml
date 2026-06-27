@@ -69,17 +69,20 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    mem_limit: 256m
+    mem_limit: 512m
 
   # Apache Cassandra 4.1
   cassandra:
     image: cassandra:4.1
     container_name: gridsense_cassandra
+    environment:
+      - MAX_HEAP_SIZE=2G
+      - HEAP_NEWSIZE=512M
     ports:
       - "9042:9042"
     volumes:
       - cassandra_data:/var/lib/cassandra
-    mem_limit: 2g # Cassandra needs more memory
+    mem_limit: 4g
 
 volumes:
   postgres_data:

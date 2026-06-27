@@ -1,47 +1,47 @@
 from cassandra.cluster import Cluster
-import asyncio
-from api.config import settings
+import os
+import time
 
 _cassandra_session = None
 
-async def init_cassandra_db():
+def init_cassandra_db():
     global _cassandra_session
-    retries = 10
+    cassandra_host = os.getenv("CASSANDRA_HOST", "cassandra")
     
+    retries = 15
     while retries > 0:
         try:
-
-            cluster = Cluster([settings.CASSANDRA_HOST], port=settings.CASSANDRA_PORT)
+            print(f"Connecting to Cassandra at {cassandra_host}... ({retries} retries left)")
+            cluster = Cluster([cassandra_host])
             session = cluster.connect()
-        
-            session.execute(f"""
-                CREATE KEYSPACE IF NOT EXISTS {settings.CASSANDRA_KEYSPACE}
-                WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}};
-            """)
-            
-            session.set_keyspace(settings.CASSANDRA_KEYSPACE)
             
             session.execute("""
-                CREATE TABLE IF NOT EXISTS meter_readings (
-                    meter_id text,
+                CREATE KEYSPACE IF NOT EXISTS gridsense_ts
+                WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+            """)
+            
+            session.set_keyspace('gridsense_ts')
+            
+            session.execute("""
+                CREATE TABLE IF NOT EXISTS telemetry (
+                    asset_id text,
                     timestamp timestamp,
-                    voltage double,
-                    current_load double,
-                    frequency double,
-                    status_code int,
-                    PRIMARY KEY (meter_id, timestamp)
+                    power_kw double,
+                    voltage_v double,
+                    current_a double,
+                    PRIMARY KEY (asset_id, timestamp)
                 ) WITH CLUSTERING ORDER BY (timestamp DESC);
             """)
             
             _cassandra_session = session
-            print("Cassandra Time-Series Database initialized successfully.")
+            print("Cassandra session initialized and schema created successfully.")
             return
         except Exception as e:
-            print(f"Cassandra not ready, retrying... ({retries} left). Error: {e}")
-            await asyncio.sleep(4)
+            print(f"Cassandra is bootstrapping or not ready yet. Retrying in 5s... Error: {e}")
+            time.sleep(5)
             retries -= 1
             
-    raise Exception("Could not connect to Cassandra")
+    raise Exception("Could not connect to Cassandra after multiple attempts.")
 
 def get_cassandra_session():
     global _cassandra_session
