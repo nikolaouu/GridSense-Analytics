@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
@@ -19,10 +20,14 @@ class Settings(BaseSettings):
     NEO4J_AUTH: str = "neo4j/password"
     NEO4J_HOST: str = "neo4j"
     NEO4J_PORT: int = 7687
+    NEO4J_URI: str = "bolt://neo4j:7687"
+    NEO4J_USER: str
+    NEO4J_PASSWORD: str
 
     CASSANDRA_HOST: str = "cassandra"
     CASSANDRA_PORT: int = 9042
-    CASSANDRA_KEYSPACE: str = "gridsense_telemetry"
+    # CASSANDRA_KEYSPACE: str = "gridsense_telemetry"
+    CASSANDRA_KEYSPACE: str = "gridsense"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
