@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
         await init_redis_db()
         await init_neo4j_db()
         init_cassandra_db()
-        
+
     except Exception as e:
         print(f"CRITICAL ERROR DURING LIFESPAN STARTUP: {e}")
         raise e
