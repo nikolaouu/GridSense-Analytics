@@ -1,19 +1,22 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from api.db.postgres import init_postgres_db
 from api.db.mongo import init_mongo_db
 from api.db.redis import init_redis_db
 from api.db.neo4j import init_neo4j_db
+from api.db.postgres import init_postgres_db
+from api.db.cassandra import init_cassandra_db
 
 from api.routers.billing import router as billing_router
-from api.routers.equipment import router as equipment_router
 from api.routers.topology import router as topology_router
-from api.db.cassandra import init_cassandra_db
+from api.routers.equipment import router as equipment_router
+from api.routers.measurements import router as measurements_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
     print("Initializing distributed database connections...")
+
     try:
         await init_postgres_db()
         await init_mongo_db()
@@ -37,6 +40,7 @@ app = FastAPI(
 app.include_router(billing_router)
 app.include_router(equipment_router)
 app.include_router(topology_router)
+app.include_router(measurements_router)
 
 @app.get("/")
 def read_root():
