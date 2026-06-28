@@ -5,15 +5,15 @@ from api.config import settings
 _cassandra_session = None
 
 def init_cassandra_db():
-
     global _cassandra_session
     
-    retries = 15
-    cluster = Cluster([settings.CASSANDRA_HOST], port=settings.CASSANDRA_PORT)
-    
-    while retries > 0:
+    retries = 20
 
+    while retries > 0:
+        cluster = None
         try:
+
+            cluster = Cluster([settings.CASSANDRA_HOST], port=settings.CASSANDRA_PORT, connect_timeout=10)
             session = cluster.connect()
             
             session.execute(f"""
@@ -35,14 +35,19 @@ def init_cassandra_db():
             """)
             
             _cassandra_session = session
+
             print(f"Cassandra Database & 'meter_readings' table initialized successfully.")
-            
             return
-        
+            
         except Exception as e:
 
             print(f"Cassandra is not ready yet, retrying... ({retries} left). Error: {e}")
-            
+
+            if cluster:
+                try:
+                    cluster.shutdown()
+                except:
+                    pass
             time.sleep(5)
             retries -= 1
             
