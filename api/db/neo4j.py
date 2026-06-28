@@ -1,6 +1,5 @@
 import asyncio
 from neo4j import AsyncGraphDatabase
-from neo4j.exceptions import ServiceUnavailable
 from api.config import settings
 
 _driver = None
@@ -13,15 +12,16 @@ async def init_neo4j_db():
         auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD)
     )
     
-    retries = 10
+    retries = 15
     while retries > 0:
         try:
 
             await _driver.verify_connectivity()
             print("Neo4j Database initialized and verified successfully.")
             return
-        except ServiceUnavailable as e:
-            print(f"Neo4j is starting up, retrying connection... ({retries} left).")
+        except Exception as e:
+
+            print(f"Neo4j is not ready or DNS is resolving... ({retries} left). Error: {e}")
             await asyncio.sleep(4)
             retries -= 1
             

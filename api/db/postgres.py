@@ -6,6 +6,7 @@ from api.config import settings
 _pool = None
 
 async def register_jsonb_codec(conn):
+
     await conn.set_type_codec(
         'jsonb',
         encoder=json.dumps,
@@ -14,8 +15,10 @@ async def register_jsonb_codec(conn):
     )
 
 async def init_postgres_db():
+
     global _pool
     retries = 5
+    
     while retries > 0:
         try:
             _pool = await asyncpg.create_pool(
@@ -51,5 +54,6 @@ async def init_postgres_db():
     raise Exception("Could not connect to PostgreSQL")
 
 def get_pg_pool():
+    
     global _pool
     return _pool
