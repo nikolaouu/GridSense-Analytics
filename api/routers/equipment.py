@@ -8,19 +8,18 @@ router = APIRouter(
     tags=["Equipment Metadata Catalog (MongoDB)"]
 )
 
-@router.post("/", response_model=dict)
-async def add_equipment(equipment: EquipmentCreate):
 
+@router.post("", response_model=dict, status_code=201)
+async def add_equipment(equipment: EquipmentCreate):
     db = get_mongo_db()
-    
     existing = await db.catalog.find_one({"asset_id": equipment.asset_id})
-    
     if existing:
         raise HTTPException(status_code=400, detail="Equipment with this asset_id already exists")
     
     doc = equipment.model_dump()
     result = await db.catalog.insert_one(doc)
     return {"message": "Equipment profile added successfully", "inserted_id": str(result.inserted_id)}
+
 
 @router.get("/{asset_id}", response_model=dict)
 async def get_equipment_profile(asset_id: str):

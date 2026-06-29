@@ -10,31 +10,33 @@ router = APIRouter(
     tags=["Telemetry Ingestion (Cassandra & Redis)"]
 )
 
-@router.post("/")
+@router.post("", status_code=201)
 async def ingest_telemetry(data: TelemetryCreate):
-    
+
     cassandra_session = get_cassandra_session()
     redis_client = get_redis()
     
     if not cassandra_session:
         raise HTTPException(status_code=500, detail="Cassandra session is unavailable")
+    
     if not redis_client:
         raise HTTPException(status_code=500, detail="Redis client is unavailable")
 
     try:
-        
+
         query = """
-            INSERT INTO gridsense_ts.telemetry (asset_id, timestamp, power_kw, voltage_v, current_a)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO sensor_readings (sensor_id, reading_time, metric_type, value, unit, quality_flag)
+            VALUES (?, ?, ?, ?, ?, ?)
         """
         prepared = cassandra_session.prepare(query)
         
         cassandra_session.execute(prepared, (
             data.asset_id,
             data.timestamp,
-            data.power_kw,
-            data.voltage_v,
-            data.current_a
+            "power_kw",
+            float(data.power_kw),
+            "kW",
+            "GOOD"
         ))
 
         redis_key = f"latest:telemetry:{data.asset_id}"
@@ -55,7 +57,7 @@ async def ingest_telemetry(data: TelemetryCreate):
 
 @router.get("/{asset_id}/latest")
 async def get_latest_telemetry(asset_id: str):
-    redis_client = get_redis_client()
+    redis_client = get_redis()
     if not redis_client:
         raise HTTPException(status_code=500, detail="Redis client is unavailable")
 

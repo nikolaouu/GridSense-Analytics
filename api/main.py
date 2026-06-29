@@ -8,22 +8,22 @@ from api.db.postgres import init_postgres_db
 from api.db.cassandra import init_cassandra_db
 
 from api.routers.billing import router as billing_router
-from api.routers.topology import router as topology_router
 from api.routers.equipment import router as equipment_router
+from api.routers.grid import router as grid_router
+from api.routers.sensors import router as sensors_router
+from api.routers.alerts import router as alerts_router
 from api.routers.measurements import router as measurements_router
+from api.routers.telemetry import router as telemetry_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
-    print("Initializing distributed database connections...")
-
+    print("Initializing distributed database connections based on assignment specs...")
     try:
         await init_postgres_db()
         await init_mongo_db()
         await init_redis_db()
         await init_neo4j_db()
         init_cassandra_db()
-
     except Exception as e:
         print(f"CRITICAL ERROR DURING LIFESPAN STARTUP: {e}")
         raise e
@@ -32,20 +32,22 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="GridSense API",
-    description="Advanced Data Management - Smart Power Grid Analytics Platform",
-    version="1.0.0",
+    description="Advanced Data Management - Smart Power Grid Analytics Platform (Official Implementation)",
+    version="2.0.0",
     lifespan=lifespan
 )
 
 app.include_router(billing_router)
 app.include_router(equipment_router)
-app.include_router(topology_router)
+app.include_router(grid_router)
+app.include_router(sensors_router)
+app.include_router(alerts_router)
 app.include_router(measurements_router)
+app.include_router(telemetry_router)
 
 @app.get("/")
 def read_root():
-
     return {
-        "status": "online",
-        "message": "Welcome to GridSense Smart Grid Analytics Platform API"
+        "status": "running",
+        "platform": "GridSense Smart Grid Analytics"
     }

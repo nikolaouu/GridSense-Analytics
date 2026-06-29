@@ -15,7 +15,7 @@ async def register_jsonb_codec(conn):
     )
 
 async def init_postgres_db():
-
+    
     global _pool
     retries = 5
     
@@ -33,6 +33,7 @@ async def init_postgres_db():
             )
             
             async with _pool.acquire() as connection:
+
                 await connection.execute("""
                     CREATE TABLE IF NOT EXISTS consumer_billing (
                         account_id SERIAL PRIMARY KEY,
@@ -43,7 +44,18 @@ async def init_postgres_db():
                         meta_data JSONB,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
+
+                    CREATE TABLE IF NOT EXISTS bills (
+                        bill_id SERIAL PRIMARY KEY,
+                        customer_id VARCHAR(100) NOT NULL,
+                        meter_id VARCHAR(100) NOT NULL,
+                        total_kwh DOUBLE PRECISION NOT NULL,
+                        amount_due DOUBLE PRECISION NOT NULL,
+                        billing_date TIMESTAMP NOT NULL,
+                        status VARCHAR(50) NOT NULL
+                    );
                 """)
+
             print("PostgreSQL Database initialized with asyncpg pool and JSONB codec.")
             return
         except Exception as e:
@@ -54,6 +66,5 @@ async def init_postgres_db():
     raise Exception("Could not connect to PostgreSQL")
 
 def get_pg_pool():
-    
     global _pool
     return _pool

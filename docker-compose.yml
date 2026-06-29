@@ -1,8 +1,5 @@
-version: '3.8'
-
 services:
 
-  # --- API SERVICE ---
   api:
     build: .
     container_name: gridsense_api
@@ -13,15 +10,19 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
-      - mongodb
-      - neo4j
-      - redis
-      - cassandra
+      billing-db:
+        condition: service_healthy
+      catalog-db:
+        condition: service_healthy
+      graph-db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+      timeseries-db:
+        condition: service_healthy
     mem_limit: 512m
 
-  # PostgreSQL 15
-  postgres:
+  billing-db:
     image: postgres:15-alpine
     container_name: gridsense_postgres
     environment:
@@ -33,9 +34,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     mem_limit: 512m
+    healthcheck:
+      test: pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # MongoDB 7
-  mongodb:
+  catalog-db:
     image: mongo:7
     container_name: gridsense_mongodb
     environment:
@@ -46,22 +51,33 @@ services:
     volumes:
       - mongo_data:/data/db
     mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'db.runCommand({ping:1})' | mongosh localhost:27017/test --quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Neo4j 5 (Community)
-  neo4j:
+  graph-db:
     image: neo4j:5-community
     container_name: gridsense_neo4j
-    environment:
-      NEO4J_AUTH: ${NEO4J_AUTH}
+    restart: unless-stopped
     ports:
-      - "7474:7474" # HTTP UI
-      - "7687:7687" # Bolt protocol
+      - "7474:7474" 
+      - "7687:7687" 
+    environment:
+      NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD}"
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_server_memory_heap_max__size: "512M"
     volumes:
       - neo4j_data:/data
-    mem_limit: 1g
+      - ./neo4j/import:/import
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "http://localhost:7474"]
+      interval: 20s
+      timeout: 5s
+      retries: 8
 
-  # Redis 7
-  redis:
+  cache:
     image: redis:7-alpine
     container_name: gridsense_redis
     command: redis-server --requirepass ${REDIS_PASSWORD}
@@ -70,19 +86,32 @@ services:
     volumes:
       - redis_data:/data
     mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Apache Cassandra 4.1
-  cassandra:
+  timeseries-db:
     image: cassandra:4.1
     container_name: gridsense_cassandra
+    restart: unless-stopped
     environment:
-      - MAX_HEAP_SIZE=2G
-      - HEAP_NEWSIZE=512M
+      CASSANDRA_CLUSTER_NAME: "GridSenseCluster"
+      CASSANDRA_DC: "dc1"
+      CASSANDRA_ENDPOINT_SNITCH: "GossipingPropertyFileSnitch"
+      HEAP_NEWSIZE: "512M"
+      MAX_HEAP_SIZE: "2G"
     ports:
       - "9042:9042"
     volumes:
       - cassandra_data:/var/lib/cassandra
     mem_limit: 4g
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status | grep -q '^UN'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
 
 volumes:
   postgres_data:
@@ -90,3 +119,7 @@ volumes:
   neo4j_data:
   redis_data:
   cassandra_data:
+
+networks:
+  default:
+    name: gridsense_net
