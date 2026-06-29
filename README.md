@@ -25,10 +25,3 @@ Ensure you have the following installed on your system:
 - **Docker Compose** (v2.0 or higher)
 
 ---
-
-## 3. Installation & Setup
-
-### Step 1: Clone the Repository
-```bash
-git clone <repository-url>
-cd gridsense
